@@ -25,6 +25,13 @@ function trelloMiddleware (consumerKey) {
   }
 }
 
+function knexMiddleware (knex) {
+  return (req, res, next) => {
+    req.knex = knex
+    next()
+  }
+}
+
 module.exports = function createApp (options) {
   const {
     knex,
@@ -85,30 +92,33 @@ module.exports = function createApp (options) {
       expiration: 'never'
     }
   }, (req, token, tokenSecret, profile, done) => {
-    knex.transaction(trx => {
-      return trx('users')
-        .forUpdate()
-        .where({id: profile.id})
-        .first()
-        .then(row => {
-          if (row) {
-            done(null, makeExpressUserFromRow(row))
-          } else {
-            return knex('users')
-              .insert({
-                id: profile.id,
-                token,
-                token_secret: tokenSecret,
-                email: profile.emails[0].value,
-                display_name: profile.displayName
-              }, '*')
-              .then(rows => {
-                done(null, makeExpressUserFromRow(rows[0]))
-              })
-          }
-        })
-        .catch(done)
-    })
+    knex('users')
+      .where({id: profile.id})
+      .first()
+      .then(row => {
+        if (row) {
+          // TODO: update stale info
+          done(null, makeExpressUserFromRow(row))
+        } else {
+          return knex('users')
+            .insert({
+              id: profile.id,
+              token,
+              token_secret: tokenSecret,
+              email: profile.emails[0].value,
+              display_name: profile.displayName
+            }, 'id')
+            .then(ids => {
+              return knex('users')
+                .where({id: ids[0]})
+                .first()
+            })
+            .then(row => {
+              done(null, makeExpressUserFromRow(row))
+            })
+        }
+      })
+      .catch(done)
   }))
 
   passport.serializeUser(function (user, done) {
@@ -154,7 +164,7 @@ module.exports = function createApp (options) {
     res.send({ok: true})
   })
 
-  app.use('/graphql', trelloMiddleware(consumerKey), graphqlHTTP({
+  app.use('/graphql', knexMiddleware(knex), trelloMiddleware(consumerKey), graphqlHTTP({
     schema: graphqlSchema,
     graphiql: !isProduction
   }))

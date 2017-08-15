@@ -7,6 +7,10 @@ type Query {
   board(id: String!): BoardWithCards
 }
 
+type Mutation {
+  newBlock(cardId: String!, length: Int!): Block
+}
+
 scalar GraphQLDateTime
 
 type User {
@@ -17,6 +21,7 @@ type User {
   createdAt: GraphQLDateTime!
   assignedCards: [Card!]!
   boards: [Board!]!
+  blocks(cardId: String, first: Int = 20, offset: Int = 0): [Block!]!
 }
 
 type Card {
@@ -43,4 +48,12 @@ type BoardWithCards implements BoardInterface {
   shortUrl: String!
   cards: [Card!]!
 }
+
+type Block {
+  id: Int!
+  length: Int!
+  createdAt: GraphQLDateTime!
+  cardId: String!
+}
+
 `
