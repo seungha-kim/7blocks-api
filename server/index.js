@@ -9,6 +9,8 @@ const graphqlHTTP = require('express-graphql')
 const connectSessionKnex = require('connect-session-knex')
 const axios = require('axios')
 
+const TRELLO_SESSION_KEY = 'oauth:trello'
+
 function trelloMiddleware (consumerKey) {
   return (req, res, next) => {
     if (req.user) {
@@ -82,6 +84,7 @@ module.exports = function createApp (options) {
   }
 
   passport.use('trello', new trello.Strategy({ // FIXME
+    sessionKey: TRELLO_SESSION_KEY,
     consumerKey,
     consumerSecret,
     callbackURL,
@@ -144,7 +147,11 @@ module.exports = function createApp (options) {
 
   app.get('/auth', passport.authenticate('trello'))
 
-  app.get('/auth/callback', passport.authenticate('trello', {
+  app.get('/auth/callback', (req, res, next) => {
+    // FIXME
+    log.info(req.session)
+    log.info(req.session[TRELLO_SESSION_KEY])
+  }, passport.authenticate('trello', {
     successRedirect: '/auth/success',
     failureRedirect: '/auth/failure'
   }))
