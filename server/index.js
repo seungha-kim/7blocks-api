@@ -58,6 +58,10 @@ module.exports = function createApp (options) {
   app.use(corsMiddleware)
   app.options('*', corsMiddleware)
 
+  if (isProduction) {
+    app.set('trust proxy', 1)
+  }
+
   const KnexSessionStore = connectSessionKnex(session)
   const sessionStore = new KnexSessionStore({
     knex
