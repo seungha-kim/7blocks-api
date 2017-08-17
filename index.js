@@ -30,5 +30,6 @@ const app = createExpressApp({
 })
 
 app.listen(port, function () {
+  log.info(`current NODE_ENV: ${env.NODE_ENV}`)
   log.info(`listening ${port}...`)
 })
