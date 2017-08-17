@@ -151,6 +151,7 @@ module.exports = function createApp (options) {
     // FIXME
     log.info(req.session)
     log.info(req.session[TRELLO_SESSION_KEY])
+    next()
   }, passport.authenticate('trello', {
     successRedirect: '/auth/success',
     failureRedirect: '/auth/failure'
